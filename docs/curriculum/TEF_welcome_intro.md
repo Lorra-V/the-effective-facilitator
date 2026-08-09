@@ -1,0 +1,95 @@
+# Welcome and Introduction {#welcome-and-introduction .TOC-Heading}
+
+# Contents {#contents .TOC-Heading}
+
+[Introduction [2](#introduction)](#introduction)
+
+[Course Objectives [2](#course-objectives)](#course-objectives)
+
+[Intended Outcome [3](#intended-outcome)](#intended-outcome)
+
+**\
+**
+
+# Introduction
+
+Artificial intelligence can help us work faster, explore ideas, solve
+problems and make decisions. But the more capable and persuasive these
+systems become, the more important it is to remain conscious of what we
+are allowing them to influence.
+
+This course is not designed to make you suspicious of AI or reluctant to
+use it. It is designed to help you use AI deliberately---without
+surrendering the distinctly human capacities required for sound
+judgement, meaningful participation and responsible action.
+
+Through nine personal disciplines, you will examine how you respond to
+three fundamental questions:
+
+-   **Authority:** Who or what am I allowing to shape this decision?
+
+-   **Ambiguity:** How do I respond when the answer remains incomplete?
+
+-   **Control:** When should I direct, intervene, release or allow
+    emergence?
+
+The course will help you recognise important distinctions that can
+easily become blurred when working with AI: assistance is not authority;
+fluency is not truth; efficiency is not effectiveness; prediction is not
+destiny; generation is not imagination; and automation does not remove
+responsibility.
+
+Each discipline offers a practical framework for examining your habits,
+testing your assumptions and making more intentional choices. The aim is
+not to prescribe a single "correct" way to use AI, but to strengthen
+your ability to determine what each situation requires---and to remain
+accountable for the choices you make.
+
+# Course Objectives
+
+Through this course, you will:
+
+-   Understand the nine personal disciplines and their relevance to
+    AI-supported work.
+
+-   Examine your own tendencies in relation to authority, ambiguity and
+    control.
+
+-   Preserve independent thought and judgement when consulting AI.
+
+-   Evaluate AI-generated outputs beyond their polish, confidence or
+    apparent completeness.
+
+-   Recognise when AI is expanding your thinking and when it may be
+    narrowing your imagination.
+
+-   Identify assumptions, biases, omissions and stakeholders that may be
+    missing from an AI-supported process.
+
+-   Determine when automation is appropriate, when a process should
+    first be redesigned, and when human participation should be
+    retained.
+
+-   Distinguish between delegating a task and surrendering
+    responsibility for its consequences.
+
+-   Act responsibly when certainty is unavailable and no option is
+    entirely risk-free.
+
+-   Develop practical habits for thoughtful, accountable and distinctly
+    human engagement with AI.
+
+# Intended Outcome
+
+By the end of the course, you will have developed a personal framework
+for working with AI that is deliberate, discerning and accountable. You
+will be better equipped to decide when to use AI, how much influence to
+give it, what requires human participation and what remains your
+responsibility---even after a task has been delegated or automated.
+
+The intended outcome is not simply greater competence with AI. It is the
+ability to use AI without diminishing your capacity to think
+independently, question carefully, imagine freely, engage meaningfully
+and take responsibility for the decisions that follow.
+
+# 

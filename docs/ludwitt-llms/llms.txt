@@ -1,0 +1,47 @@
+# Ludwitt
+
+> AI-powered adaptive learning platform with two tracks: (1) Basics — adaptive K-12 + adult literacy/numeracy (Math, Reading, Logic, Latin, Greek, Writing) addressing the PIAAC crisis where 28% of US adults struggle with basic literacy, and (2) Developer Training — learn to build with AI tools (Cursor, Claude Code, OpenClaw) through guided projects, deployment, and open-source contributions.
+
+## Core Pages
+
+- [About](https://pitchrise.ludwitt.com/about): Mission, team, PIAAC research context
+- [For Adults](https://pitchrise.ludwitt.com/for-adults): Adult re-education solutions
+- [For Schools](https://pitchrise.ludwitt.com/for-schools): K-12 adaptive learning
+- [For Employers](https://pitchrise.ludwitt.com/for-employers): Workforce literacy programs
+- [For Libraries](https://pitchrise.ludwitt.com/for-libraries): Community education
+- [Research](https://pitchrise.ludwitt.com/research): PIAAC data and learning science
+- [Pricing](https://pitchrise.ludwitt.com/pricing): Free tier, premium, credits, institutional
+- [How It Works](https://pitchrise.ludwitt.com/how-it-works): Step-by-step learning process
+- [FAQ](https://pitchrise.ludwitt.com/faq): Common questions answered
+- [Compare vs Tutoring](https://pitchrise.ludwitt.com/compare/vs-tutoring): Cost/feature comparison
+
+## Basics — Adaptive Learning
+
+- [Basics Dashboard](https://pitchrise.ludwitt.com/basics): Math, Reading, Logic, Latin, Greek, Writing
+- [AI Assistant](https://pitchrise.ludwitt.com/basics/ai-assistant): 24/7 AI tutoring powered by Claude
+- [Study Rooms](https://pitchrise.ludwitt.com/basics/study-rooms): Collaborative video learning
+- [Leaderboard](https://pitchrise.ludwitt.com/basics/leaderboard): Gamification and progress
+- [Achievements](https://pitchrise.ludwitt.com/basics/achievements): Badges and milestones
+- [Cohorts](https://pitchrise.ludwitt.com/basics/cohorts): Group learning with mentors
+
+## Developer Training (ALC)
+
+- [Developer Training Dashboard](https://pitchrise.ludwitt.com/alc): Learn to build with AI coding tools
+
+Three paths available:
+- Cursor path: Install Cursor AI editor, build a personal website, deploy to Vercel
+- Claude Code path: Install Claude Code CLI, build a tweet automation agent, deploy to Firebase
+- OpenClaw path: Install OpenClaw agent platform, build website + email, deploy
+
+Post-deploy shared steps: open-source PR to cursorboston.com, Loom showcase videos, 5-year vision, AI-generated custom projects
+
+## Legal
+
+- [Privacy Policy](https://pitchrise.ludwitt.com/legal/privacy-policy): COPPA and FERPA compliant
+- [Terms of Service](https://pitchrise.ludwitt.com/legal/terms-of-service)
+
+## Optional
+
+- [Glossary](https://pitchrise.ludwitt.com/glossary): Learning science terms defined
+- [Extended Details](https://pitchrise.ludwitt.com/llms-full.txt): Full technical details for AI agents
+- [Sitemap](https://pitchrise.ludwitt.com/sitemap.xml): All public pages
