@@ -10,6 +10,9 @@ export type SidebarDiscipline = {
   sort_order: number;
   is_full_module: boolean;
   completed: boolean;
+  dilemmaDone: boolean;
+  recognitionDone: boolean;
+  knowledgeDone: boolean;
 };
 
 export type SidebarPath = {
@@ -22,7 +25,6 @@ export type SidebarPath = {
 
 type Props = {
   paths: SidebarPath[];
-  goals: { label: string; done: boolean }[];
 };
 
 function shortPathTitle(title: string): string {
@@ -31,8 +33,36 @@ function shortPathTitle(title: string): string {
   return title.slice(0, dash).trim();
 }
 
-export function CourseSidebar({ paths, goals }: Props) {
+export function CourseSidebar({ paths }: Props) {
   const pathname = usePathname();
+
+  const activeDiscipline = paths
+    .flatMap((p) =>
+      p.disciplines.map((d) => ({
+        ...d,
+        pathSlug: p.slug,
+        href: `/paths/${p.slug}/${d.slug}`,
+      })),
+    )
+    .find((d) => d.href === pathname);
+
+  const showGoals = Boolean(activeDiscipline?.is_full_module);
+  const goals = activeDiscipline
+    ? [
+        {
+          label: "Complete a Dilemma",
+          done: activeDiscipline.dilemmaDone,
+        },
+        {
+          label: "Complete Recognition Activity",
+          done: activeDiscipline.recognitionDone,
+        },
+        {
+          label: "Complete the Knowledge Check",
+          done: activeDiscipline.knowledgeDone,
+        },
+      ]
+    : [];
 
   return (
     <aside className="tef-sidebar">
@@ -40,21 +70,23 @@ export function CourseSidebar({ paths, goals }: Props) {
         <Link href="/paths">The Effective Facilitator</Link>
       </div>
 
-      <section className="tef-sidebar-goals">
-        <h2 className="tef-subtitle">Today&apos;s Goal</h2>
-        <ul>
-          {goals.map((g) => (
-            <li key={g.label} className={g.done ? "done" : undefined}>
-              <span className="tef-check" aria-hidden>
-                {g.done ? "✓" : "○"}
-              </span>
-              {g.label}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {showGoals ? (
+        <section className="tef-sidebar-goals">
+          <h2 className="tef-subtitle">Today&apos;s Goal</h2>
+          <ul>
+            {goals.map((g) => (
+              <li key={g.label} className={g.done ? "done" : undefined}>
+                <span className="tef-check" aria-hidden>
+                  {g.done ? "●" : "○"}
+                </span>
+                {g.label}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
-      <nav className="tef-sidebar-nav" aria-label="Course navigation">
+      <nav className="tef-sidebar-nav-card" aria-label="Course navigation">
         <Link
           href="/paths/welcome"
           className={`tef-nav-link${pathname === "/paths/welcome" ? " active" : ""}`}
@@ -62,43 +94,77 @@ export function CourseSidebar({ paths, goals }: Props) {
           Welcome and Introduction
         </Link>
 
-        {paths.map((path) => (
-          <div key={path.id} className="tef-nav-path">
-            <p className="tef-nav-path-title">{shortPathTitle(path.title)}</p>
-            <ul>
-              {path.disciplines.map((d) => {
-                const href = `/paths/${path.slug}/${d.slug}`;
-                const active = pathname === href;
-                return (
-                  <li key={d.id}>
-                    <Link
-                      href={href}
-                      className={`tef-nav-item${active ? " active" : ""}${d.completed ? " completed" : ""}`}
-                    >
-                      <span className="tef-nav-item-title">{d.title}</span>
-                      <span
-                        className={`tef-badge-hover ${
-                          d.is_full_module
-                            ? "tef-badge tef-badge-full"
-                            : "tef-badge tef-badge-preview"
-                        }`}
-                      >
-                        {d.is_full_module ? "Full Module" : "Preview"}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </nav>
+        <Link
+          href="/paths/assessment"
+          className={`tef-nav-link${pathname === "/paths/assessment" ? " active" : ""}`}
+        >
+          TEF Developmental Profile
+        </Link>
 
-      <p className="tef-sidebar-foot">
-        <Link href="/">Home</Link>
-        {" · "}
-        <Link href="/explore">Explore</Link>
-      </p>
+        <Link
+          href="/paths/regarding-others"
+          className={`tef-nav-link${
+            pathname === "/paths/regarding-others" ||
+            pathname === "/paths/regarding-myself" ||
+            pathname === "/paths/regarding-life"
+              ? " active"
+              : ""
+          }`}
+        >
+          The Developmental Paths
+        </Link>
+
+        {paths.map((path) => {
+          const pathHref = `/paths/${path.slug}`;
+          const pathActive =
+            pathname === pathHref || pathname.startsWith(`${pathHref}/`);
+          return (
+            <div key={path.id} className="tef-nav-path">
+              <p className="tef-nav-path-title">
+                <Link
+                  href={pathHref}
+                  className={pathActive ? "active" : undefined}
+                  style={{
+                    color: "inherit",
+                    textDecoration: "none",
+                  }}
+                >
+                  {shortPathTitle(path.title)}
+                </Link>
+              </p>
+              <ul>
+                {path.disciplines.map((d) => {
+                  const href = `/paths/${path.slug}/${d.slug}`;
+                  const active = pathname === href;
+                  return (
+                    <li key={d.id}>
+                      <Link
+                        href={href}
+                        className={`tef-nav-item${active ? " active" : ""}${d.completed ? " completed" : ""}`}
+                      >
+                        <span className="tef-nav-item-title">{d.title}</span>
+                        <span
+                          className={`tef-badge-hover ${
+                            d.is_full_module
+                              ? "tef-badge tef-badge-full"
+                              : "tef-badge tef-badge-preview"
+                          }`}
+                        >
+                          {d.is_full_module ? "FULL MODULE" : "PREVIEW"}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+
+        <p className="tef-sidebar-profile" aria-disabled="true">
+          Profile
+        </p>
+      </nav>
     </aside>
   );
 }

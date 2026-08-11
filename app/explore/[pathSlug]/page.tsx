@@ -128,12 +128,11 @@ export default async function ExplorePathPage({ params }: Props) {
         >
           <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.75rem" }}>Get Started</h2>
           <p style={{ margin: "0 0 0.85rem", color: "var(--tef-muted)" }}>
-            There is no public sign-up. Open the programme via the Ludwitt/Hult
-            launcher (<code style={{ fontSize: "0.9em" }}>/launch?token=…</code>
-            ). Without a token, launch asks you to arrive from Ludwitt/Hult.
+            Ready to begin? Enter your email on the get-started page and
+            you&apos;ll be taken straight into the gated learning paths.
           </p>
-          <Link href="/launch" className="tef-btn" style={{ textDecoration: "none" }}>
-            Go to Launch
+          <Link href="/get-started" className="tef-btn" style={{ textDecoration: "none" }}>
+            Get Started
           </Link>
         </section>
       </main>

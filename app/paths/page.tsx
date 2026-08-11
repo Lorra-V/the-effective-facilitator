@@ -22,7 +22,7 @@ type PathRow = {
 
 export default async function PathsPage() {
   const session = await requireSession();
-  if (!session) redirect("/launch");
+  if (!session) redirect("/get-started");
 
   const supabase = createAdminClient();
   const { data, error } = await supabase

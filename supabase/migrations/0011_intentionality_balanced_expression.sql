@@ -1,3 +1,14 @@
+-- 0011_intentionality_balanced_expression.sql
+-- REVIEW ONLY — do not auto-execute. Wait for explicit confirmation after manual run.
+--
+-- Adds Intentionality Balanced Expression at end of Central Tension
+-- (same CalloutBox closing treatment as Detachment / Sense of Wonder).
+--
+-- Note: If 0010 has not been applied yet, this full content_md replace also
+-- includes the AI-Era Failure Modes intro from 0010.
+
+update disciplines
+set content_md = $int$
 ## Introduction
 
 **Choosing what the technology is for**
@@ -233,3 +244,6 @@ Complete:
 ## Closing Statement
 
 Intentionality ensures that AI remains a means rather than becoming the author of the purpose.
+
+$int$
+where id = 'b2000000-0000-4000-8000-000000000006';

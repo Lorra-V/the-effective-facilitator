@@ -3,14 +3,37 @@ import { splitClosingMarkdown } from "@/lib/split-closing";
 
 export type ContentSection = { title: string; body: string };
 
+export type SelfAssessmentItem = {
+  index: number;
+  text: string;
+  /** Author-only scoring hints retained in data, never shown to participants */
+  reverseScored: boolean;
+  distortionIndicator: boolean;
+  overuseIndicator: boolean;
+};
+
 export type LessonStep =
-  | { type: "content"; id: string; title: string; markdown: string }
+  | {
+      type: "content";
+      id: string;
+      title: string;
+      markdown: string;
+      /** Dark callout at end of section (e.g. Balanced Expression) */
+      balancedExpression?: string | null;
+    }
   | { type: "scenario"; id: string; title: string; scenario: ScenarioView }
   | {
       type: "knowledge_check";
       id: string;
       title: string;
       scenarios: ScenarioView[];
+    }
+  | {
+      type: "self_assessment";
+      id: string;
+      title: string;
+      intro: string;
+      items: SelfAssessmentItem[];
     }
   | { type: "closing"; id: string; title: string; markdown: string }
   | { type: "mark_viewed"; id: string; title: string }
@@ -30,6 +53,35 @@ function isKnowledgeCheckTitle(title: string): boolean {
 
 function isClosingTitle(title: string): boolean {
   return /^closing\s+(statement|question)$/i.test(title.trim());
+}
+
+function isSelfAssessmentTitle(title: string): boolean {
+  return /^self-?assessment$/i.test(title.trim());
+}
+
+function isIntroductionTitle(title: string): boolean {
+  return /^introduction$/i.test(title.trim());
+}
+
+/** Pull trailing Balanced Expression block out for CalloutBox (closing style). */
+export function splitBalancedExpression(markdown: string): {
+  markdown: string;
+  balancedExpression: string | null;
+} {
+  const match = markdown.match(/^#{2,3}\s*Balanced\s+Expression\s*$/im);
+  if (!match || match.index == null) {
+    return { markdown, balancedExpression: null };
+  }
+  const before = markdown.slice(0, match.index).trimEnd();
+  const after = markdown.slice(match.index).replace(
+    /^#{2,3}\s*Balanced\s+Expression\s*\n+/i,
+    "",
+  );
+  const text = after.trim();
+  return {
+    markdown: before,
+    balancedExpression: text || null,
+  };
 }
 
 /** Parse ## sections from lesson markdown (closing already split out). */
@@ -56,6 +108,61 @@ export function parseContentSections(markdown: string): ContentSection[] {
   return sections;
 }
 
+export function parseSelfAssessmentItems(body: string): {
+  intro: string;
+  items: SelfAssessmentItem[];
+} {
+  const text = body.replace(/\r\n/g, "\n").trim();
+  const itemRe =
+    /^(\d+)\.\s+(.+?)(?:\s*\*\*(Reverse-scored|Distortion indicator|Overuse indicator)\*\*)?\s*$/gim;
+  const items: SelfAssessmentItem[] = [];
+  let introEnd = text.length;
+
+  for (const match of text.matchAll(itemRe)) {
+    if (items.length === 0 && match.index != null) {
+      introEnd = match.index;
+    }
+    const index = Number(match[1]);
+    let line = match[2].trim();
+    let reverseScored = false;
+    let distortionIndicator = false;
+    let overuseIndicator = false;
+    if (/\*\*Reverse-scored\*\*/i.test(match[0]) || /reverse-scored/i.test(line)) {
+      reverseScored = true;
+    }
+    if (
+      /\*\*Distortion indicator\*\*/i.test(match[0]) ||
+      /distortion indicator/i.test(line)
+    ) {
+      distortionIndicator = true;
+    }
+    if (
+      /\*\*Overuse indicator\*\*/i.test(match[0]) ||
+      /overuse indicator/i.test(line)
+    ) {
+      overuseIndicator = true;
+    }
+    line = line
+      .replace(/\s*\*\*Reverse-scored\*\*/gi, "")
+      .replace(/\s*\*\*Distortion indicator\*\*/gi, "")
+      .replace(/\s*\*\*Overuse indicator\*\*/gi, "")
+      .replace(/\s*Reverse-scored\.?/gi, "")
+      .replace(/\s*Distortion indicator\.?/gi, "")
+      .replace(/\s*Overuse indicator\.?/gi, "")
+      .trim();
+    items.push({
+      index,
+      text: line,
+      reverseScored,
+      distortionIndicator,
+      overuseIndicator,
+    });
+  }
+
+  const intro = text.slice(0, introEnd).trim();
+  return { intro, items };
+}
+
 /**
  * Strip Dilemma / Recognition option blocks from content_md.
  * Keeps the ## heading with empty body (interactive step supplies Q+options).
@@ -79,6 +186,86 @@ export function stripInteractiveProseFromContent(markdown: string): string {
     return `${rebuilt.trimEnd()}\n\n${closing.trim()}\n`;
   }
   return `${rebuilt.trimEnd()}\n`;
+}
+
+/**
+ * Drop standalone Introduction step; merge the next two content sections
+ * (typically Foundation + AI-Era Definition) into the new opening step.
+ */
+function coalesceOpeningContentSteps(steps: LessonStep[]): LessonStep[] {
+  const out = [...steps];
+  const firstInteractive = out.findIndex((s) =>
+    s.type === "scenario" ||
+    s.type === "knowledge_check" ||
+    s.type === "self_assessment",
+  );
+  const end = firstInteractive === -1 ? out.length : firstInteractive;
+  const opening = out.slice(0, end);
+  const rest = out.slice(end);
+
+  const contentIdxs = opening
+    .map((s, i) => (s.type === "content" ? i : -1))
+    .filter((i) => i >= 0);
+
+  if (contentIdxs.length === 0) return out;
+
+  let working = [...opening];
+  const introAt = working.findIndex(
+    (s) => s.type === "content" && isIntroductionTitle(s.title),
+  );
+  if (introAt !== -1 && working[introAt]?.type === "content") {
+    const intro = working[introAt];
+    if (intro.type === "content") {
+      const nextContentAt = working.findIndex(
+        (s, i) => i > introAt && s.type === "content",
+      );
+      if (nextContentAt !== -1 && working[nextContentAt]?.type === "content") {
+        const next = working[nextContentAt];
+        if (next.type === "content") {
+          const introBody = intro.markdown
+            .replace(/^##\s+Introduction\s*\n*/i, "")
+            .trim();
+          const nextBody = next.markdown.replace(/^##\s+[^\n]+\n*/, "").trim();
+          working[nextContentAt] = {
+            ...next,
+            markdown: introBody
+              ? `## ${next.title}\n\n${introBody}\n\n${nextBody}`
+              : next.markdown,
+          };
+        }
+      }
+      working.splice(introAt, 1);
+    }
+  }
+
+  const contentPositions = working
+    .map((s, i) => (s.type === "content" ? i : -1))
+    .filter((i) => i >= 0);
+  if (contentPositions.length >= 2) {
+    const a = contentPositions[0]!;
+    const b = contentPositions[1]!;
+    const stepA = working[a];
+    const stepB = working[b];
+    if (stepA?.type === "content" && stepB?.type === "content") {
+      const bodyA = stepA.markdown.replace(/^##\s+[^\n]+\n*/, "").trim();
+      const bodyB = stepB.markdown.replace(/^##\s+[^\n]+\n*/, "").trim();
+      const mergedTitle =
+        stepA.title === stepB.title
+          ? stepA.title
+          : `${stepA.title} · ${stepB.title}`;
+      working[a] = {
+        type: "content",
+        id: stepA.id,
+        title: mergedTitle,
+        markdown: `## ${stepA.title}\n\n${bodyA}\n\n## ${stepB.title}\n\n${bodyB}`,
+        balancedExpression:
+          stepA.balancedExpression ?? stepB.balancedExpression ?? null,
+      };
+      working.splice(b, 1);
+    }
+  }
+
+  return [...working, ...rest];
 }
 
 export function buildLessonSteps(
@@ -134,6 +321,31 @@ export function buildLessonSteps(
       continue;
     }
 
+    if (isSelfAssessmentTitle(section.title)) {
+      const { intro, items } = parseSelfAssessmentItems(section.body);
+      if (items.length > 0) {
+        steps.push({
+          type: "self_assessment",
+          id: "self-assessment",
+          // Display label only — not the deferred Baseline Assessment product.
+          title: "TEF Developmental Profile",
+          intro,
+          items,
+        });
+      } else {
+        const md = section.body
+          ? `## ${section.title}\n\n${section.body}`
+          : `## ${section.title}`;
+        steps.push({
+          type: "content",
+          id: `content-${steps.length}-${section.title}`,
+          title: section.title,
+          markdown: md,
+        });
+      }
+      continue;
+    }
+
     if (isKnowledgeCheckTitle(section.title)) {
       if (knowledgeChecks.length > 0) {
         steps.push({
@@ -148,22 +360,22 @@ export function buildLessonSteps(
     }
 
     if (isClosingTitle(section.title)) {
-      // Closing handled via splitClosingMarkdown body below
       continue;
     }
 
     const md = section.body
       ? `## ${section.title}\n\n${section.body}`
       : `## ${section.title}`;
+    const { markdown, balancedExpression } = splitBalancedExpression(md);
     steps.push({
       type: "content",
       id: `content-${steps.length}-${section.title}`,
       title: section.title,
-      markdown: md,
+      markdown,
+      balancedExpression,
     });
   }
 
-  // Any leftover interactive scenarios (e.g. preview modules, or content without headings)
   while (dilemmaIdx < dilemmas.length) {
     const scenario = dilemmas[dilemmaIdx++];
     steps.push({
@@ -224,5 +436,5 @@ export function buildLessonSteps(
     title: "Complete Module",
   });
 
-  return steps;
+  return coalesceOpeningContentSteps(steps);
 }

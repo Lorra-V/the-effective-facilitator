@@ -1,3 +1,11 @@
+-- 0009_detachment_balanced_expression.sql
+-- REVIEW ONLY — do not auto-execute. Wait for explicit confirmation after manual run.
+--
+-- Restores Detachment Balanced Expression at end of Central Tension
+-- (Phase A 0004 wording; CalloutBox closing style via ### Balanced Expression heading).
+
+update disciplines
+set content_md = $det$
 ## Introduction
 
 **Releasing attachment without abandoning responsibility**
@@ -225,3 +233,6 @@ Ask:
 ## Closing Statement
 
 Detachment allows us to use powerful outputs without becoming controlled by them.
+
+$det$
+where id = 'b2000000-0000-4000-8000-000000000001';

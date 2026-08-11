@@ -6,9 +6,9 @@ export async function middleware(request: NextRequest) {
   const session = token ? await verifySessionToken(token) : null;
 
   if (!session) {
-    // Send to /launch with no token → rejection screen ("Launch from Ludwitt/Hult").
-    // /launch is not matched by this middleware, so this cannot loop.
-    return NextResponse.redirect(new URL("/launch", request.url));
+    // Public self-serve entry mints a launch token, then /launch creates the session.
+    // /get-started is outside this matcher, so this cannot loop.
+    return NextResponse.redirect(new URL("/get-started", request.url));
   }
 
   return NextResponse.next();

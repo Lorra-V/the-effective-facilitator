@@ -1,5 +1,6 @@
 import { CourseSidebar, type SidebarPath } from "@/components/CourseSidebar";
 import { requireSession } from "@/lib/auth/session";
+import { parseProgressAnswers } from "@/lib/progress";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type DisciplineRow = {
@@ -18,6 +19,19 @@ type PathRow = {
   disciplines: DisciplineRow[] | null;
 };
 
+type ScenarioRow = {
+  id: string;
+  discipline_id: string;
+  kind: string;
+};
+
+type ProgressRow = {
+  discipline_id: string;
+  completed_at: string | null;
+  knowledge_score: number | null;
+  scenario_response: string | null;
+};
+
 export default async function PathsLayout({
   children,
 }: {
@@ -25,8 +39,6 @@ export default async function PathsLayout({
 }) {
   const session = await requireSession();
   let paths: SidebarPath[] = [];
-  let completedCount = 0;
-  let totalDisciplines = 0;
 
   if (session) {
     const supabase = createAdminClient();
@@ -38,25 +50,62 @@ export default async function PathsLayout({
       .order("sort_order", { ascending: true });
 
     const pathRows = (data ?? []) as PathRow[];
-    const { data: progressRows } = await supabase
-      .from("progress")
-      .select("discipline_id, completed_at")
-      .eq("user_id", session.userId)
-      .not("completed_at", "is", null);
-
-    const completed = new Set(
-      (progressRows ?? []).map((p) => p.discipline_id as string),
+    const disciplineIds = pathRows.flatMap((p) =>
+      (p.disciplines ?? []).map((d) => d.id),
     );
+
+    const [{ data: progressRows }, { data: scenarioRows }] = await Promise.all([
+      supabase
+        .from("progress")
+        .select("discipline_id, completed_at, knowledge_score, scenario_response")
+        .eq("user_id", session.userId),
+      disciplineIds.length
+        ? supabase
+            .from("scenarios")
+            .select("id, discipline_id, kind")
+            .in("discipline_id", disciplineIds)
+        : Promise.resolve({ data: [] as ScenarioRow[] }),
+    ]);
+
+    const progressByDiscipline = new Map(
+      ((progressRows ?? []) as ProgressRow[]).map((p) => [p.discipline_id, p]),
+    );
+    const scenariosByDiscipline = new Map<string, ScenarioRow[]>();
+    for (const s of (scenarioRows ?? []) as ScenarioRow[]) {
+      const list = scenariosByDiscipline.get(s.discipline_id) ?? [];
+      list.push(s);
+      scenariosByDiscipline.set(s.discipline_id, list);
+    }
 
     paths = pathRows.map((path) => {
       const disciplines = [...(path.disciplines ?? [])]
         .sort((a, b) => a.sort_order - b.sort_order)
-        .map((d) => ({
-          ...d,
-          completed: completed.has(d.id),
-        }));
-      totalDisciplines += disciplines.length;
-      completedCount += disciplines.filter((d) => d.completed).length;
+        .map((d) => {
+          const progress = progressByDiscipline.get(d.id);
+          const parsed = parseProgressAnswers(progress?.scenario_response);
+          const answers = parsed.answers ?? {};
+          const scenarios = scenariosByDiscipline.get(d.id) ?? [];
+          const dilemmas = scenarios.filter((s) => s.kind === "dilemma");
+          const recognitions = scenarios.filter((s) => s.kind === "recognition");
+          const knowledgeChecks = scenarios.filter(
+            (s) => s.kind === "knowledge_check",
+          );
+
+          return {
+            ...d,
+            completed: Boolean(progress?.completed_at),
+            dilemmaDone:
+              dilemmas.length > 0 &&
+              dilemmas.every((s) => Boolean(answers[s.id])),
+            recognitionDone:
+              recognitions.length > 0 &&
+              recognitions.every((s) => Boolean(answers[s.id])),
+            knowledgeDone:
+              knowledgeChecks.length > 0 &&
+              (progress?.knowledge_score != null ||
+                knowledgeChecks.every((s) => Boolean(answers[s.id]))),
+          };
+        });
       return {
         id: path.id,
         slug: path.slug,
@@ -67,24 +116,9 @@ export default async function PathsLayout({
     });
   }
 
-  const goals = [
-    {
-      label: "Read Welcome and Introduction",
-      done: false,
-    },
-    {
-      label: "Complete One Discipline",
-      done: completedCount >= 1,
-    },
-    {
-      label: "Finish All Nine Disciplines",
-      done: totalDisciplines > 0 && completedCount >= totalDisciplines,
-    },
-  ];
-
   return (
     <div className="tef-course">
-      <CourseSidebar paths={paths} goals={goals} />
+      <CourseSidebar paths={paths} />
       <div className="tef-main">{children}</div>
     </div>
   );

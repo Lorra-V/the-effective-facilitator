@@ -5,7 +5,7 @@ import { ShortAttribution } from "@/components/Attribution";
 export default function HomePage() {
   return (
     <div className="tef-home">
-      {/* Section 1 — Hero (no header/nav); Discover CTA → Ludwitt /launch */}
+      {/* Section 1 — Hero (no header/nav); Discover CTA → /get-started */}
       <section className="tef-home-hero" aria-label="Introduction">
         <Image
           src="/images/hero-image.png"
@@ -24,7 +24,7 @@ export default function HomePage() {
           <p className="tef-home-hero-tagline">
             AI makes creation abundant; human judgment sets the limit
           </p>
-          <Link href="/launch" className="tef-btn-bevel">
+          <Link href="/get-started" className="tef-btn-bevel">
             Discover Your Facilitator Profile
           </Link>
         </div>
@@ -85,7 +85,7 @@ export default function HomePage() {
         </div>
 
         <div className="tef-home-profile-strip">
-          <Link href="/launch" className="tef-btn-bevel">
+          <Link href="/get-started" className="tef-btn-bevel">
             Discover Your Facilitator Profile
           </Link>
         </div>

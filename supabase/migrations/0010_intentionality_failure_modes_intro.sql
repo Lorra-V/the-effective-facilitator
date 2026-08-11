@@ -1,3 +1,13 @@
+-- 0010_intentionality_failure_modes_intro.sql
+-- REVIEW ONLY — do not auto-execute. Wait for explicit confirmation after manual run.
+--
+-- Adds the shared AI-Era Failure Modes intro sentence to Intentionality
+-- (matches Detachment / Sense of Wonder).
+-- Note: stripping "Overuse indicator" from participant view is a code-only change
+-- in lib/lesson-steps.ts — no SQL required for that.
+
+update disciplines
+set content_md = $int$
 ## Introduction
 
 **Choosing what the technology is for**
@@ -94,10 +104,6 @@ It becomes:
 - Unable to revise
 - Attached to an idealised outcome
 - Dismissive of emergence
-
-### Balanced Expression
-
-I can remain committed to the purpose without becoming rigid about how it must be achieved.
 
 ## How Intentionality Shows Up
 
@@ -233,3 +239,6 @@ Complete:
 ## Closing Statement
 
 Intentionality ensures that AI remains a means rather than becoming the author of the purpose.
+
+$int$
+where id = 'b2000000-0000-4000-8000-000000000006';

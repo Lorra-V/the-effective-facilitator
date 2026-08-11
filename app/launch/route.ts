@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     email,
   });
 
-  const response = NextResponse.redirect(new URL("/paths", request.url));
+  const response = NextResponse.redirect(new URL("/paths/welcome", request.url));
   response.cookies.set(
     SESSION_COOKIE_NAME,
     sessionToken,

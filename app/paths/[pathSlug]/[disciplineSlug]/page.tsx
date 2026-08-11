@@ -92,6 +92,7 @@ export default async function DisciplinePage({ params }: PageProps) {
           centralQuestion={discipline.central_question}
           scenarios={scenarioViews}
           initialAnswers={parsed.answers ?? {}}
+          initialSelfAssessment={parsed.selfAssessment ?? {}}
           initialContentViewed={Boolean(parsed.contentViewed)}
           initialKnowledgeScore={progress?.knowledge_score ?? null}
           initialCompletedAt={progress?.completed_at ?? null}

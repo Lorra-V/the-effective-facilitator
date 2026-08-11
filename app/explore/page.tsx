@@ -133,18 +133,16 @@ export default function ExplorePage() {
         >
           <h2 style={{ fontSize: "1.2rem", margin: "0 0 0.75rem" }}>Get Started</h2>
           <p style={{ margin: "0 0 0.85rem", color: "var(--tef-muted)" }}>
-            There is no public sign-up on this site. Access is granted when you
-            arrive through the Ludwitt/Hult launcher with a one-time launch link
-            (<code style={{ fontSize: "0.9em" }}>/launch?token=…</code>). That
-            link creates your session and opens the gated learning paths.
+            Ready to begin? Enter your email on the get-started page and
+            you&apos;ll be taken straight into the gated learning paths — no
+            separate account setup required.
           </p>
           <p style={{ margin: "0 0 1.25rem", color: "var(--tef-muted)" }}>
-            If you open the launch page without a Ludwitt token, you will see a
-            short message asking you to launch from Ludwitt/Hult — that is
-            expected.
+            Your email is used only to open your session and keep progress
+            tied to you.
           </p>
-          <Link href="/launch" className="tef-btn" style={{ textDecoration: "none" }}>
-            Go to Launch
+          <Link href="/get-started" className="tef-btn" style={{ textDecoration: "none" }}>
+            Get Started
           </Link>
         </section>
 

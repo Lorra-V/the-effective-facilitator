@@ -5,6 +5,7 @@ import {
   ensureLessonStarted,
   markContentViewed,
   markLessonComplete,
+  saveSelfAssessmentRating,
   submitScenarioAnswer,
 } from "@/app/paths/actions";
 import { SessionHeartbeat } from "@/app/paths/SessionHeartbeat";
@@ -22,6 +23,7 @@ type Props = {
   centralQuestion: string;
   scenarios: ScenarioView[];
   initialAnswers: Record<string, string>;
+  initialSelfAssessment: Record<string, number>;
   initialContentViewed: boolean;
   initialKnowledgeScore: number | null;
   initialCompletedAt: string | null;
@@ -45,7 +47,9 @@ function FeedbackBlock({
   correctKey: string | null;
   explanation: string;
 }) {
-  if (kind === "knowledge_check") {
+  // Recognition + Knowledge Check have genuine correct answers.
+  // Dilemma (and preview) stay judgment-scored — never "Correct answer".
+  if (kind === "knowledge_check" || kind === "recognition") {
     return (
       <div
         className="tef-feedback tef-feedback-kc"
@@ -68,7 +72,7 @@ function FeedbackBlock({
     );
   }
 
-  // Dilemma / recognition / preview — judgment feedback, not right/wrong
+  // Dilemma / preview — judgment feedback, not right/wrong
   return (
     <div
       className="tef-feedback tef-feedback-judgment"
@@ -162,12 +166,14 @@ export function DisciplineClient({
   centralQuestion,
   scenarios,
   initialAnswers,
+  initialSelfAssessment,
   initialContentViewed,
   initialKnowledgeScore,
   initialCompletedAt,
 }: Props) {
   const [sessionId] = useState(newSessionId);
   const [answers, setAnswers] = useState(initialAnswers);
+  const [selfAssessment, setSelfAssessment] = useState(initialSelfAssessment);
   const [contentViewed, setContentViewed] = useState(initialContentViewed);
   const [knowledgeScore, setKnowledgeScore] = useState(initialKnowledgeScore);
   const [completedAt, setCompletedAt] = useState(initialCompletedAt);
@@ -258,6 +264,20 @@ export function DisciplineClient({
     });
   }
 
+  function onRateSelfAssessment(itemIndex: number, rating: number) {
+    setSelfAssessment((prev) => ({ ...prev, [String(itemIndex)]: rating }));
+    startTransition(async () => {
+      const result = await saveSelfAssessmentRating(
+        disciplineId,
+        itemIndex,
+        rating,
+      );
+      if (!result.ok) {
+        setMessage(result.error ?? "Could not save rating");
+      }
+    });
+  }
+
   function onComplete() {
     setMessage(null);
     startTransition(async () => {
@@ -278,6 +298,9 @@ export function DisciplineClient({
     }
     if (s.type === "knowledge_check") {
       return s.scenarios.every((sc) => Boolean(answers[sc.id]));
+    }
+    if (s.type === "self_assessment") {
+      return s.items.every((item) => selfAssessment[String(item.index)] != null);
     }
     if (s.type === "mark_viewed") {
       return contentViewed;
@@ -330,7 +353,7 @@ export function DisciplineClient({
           Step {stepIndex + 1} of {steps.length}
           {step ? ` · ${step.title}` : ""}
         </p>
-        {isFullModule ? (
+        {isFullModule && step?.type === "knowledge_check" ? (
           <p style={{ margin: 0, color: "var(--tef-muted)", fontSize: "0.9rem" }}>
             Knowledge score:{" "}
             {knowledgeScore == null ? "—" : `${knowledgeScore}%`}
@@ -345,12 +368,53 @@ export function DisciplineClient({
         style={{
           background: "var(--tef-surface)",
           border: "1px solid var(--tef-border)",
+          borderRadius: "var(--tef-card-radius)",
           padding: "1.5rem 1.35rem",
           minHeight: "12rem",
         }}
       >
         {step?.type === "content" ? (
-          <MarkdownContent markdown={step.markdown} />
+          <div>
+            <MarkdownContent markdown={step.markdown} />
+            {step.balancedExpression ? (
+              <CalloutBox label="Balanced Expression" variant="closing">
+                <p style={{ margin: 0 }}>{step.balancedExpression}</p>
+              </CalloutBox>
+            ) : null}
+          </div>
+        ) : null}
+
+        {step?.type === "self_assessment" ? (
+          <div>
+            <h2 style={{ marginTop: 0 }}>TEF Developmental Profile</h2>
+            {step.intro ? (
+              <MarkdownContent markdown={step.intro} />
+            ) : (
+              <p style={{ color: "var(--tef-muted)" }}>Rate from 1 to 5.</p>
+            )}
+            {step.items.map((item) => (
+              <div key={item.index} className="tef-rating-row">
+                <p className="tef-rating-prompt">
+                  {item.index}. {item.text}
+                </p>
+                <div className="tef-rating-scale" role="radiogroup" aria-label={`Item ${item.index}`}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <label key={n}>
+                      <input
+                        type="radio"
+                        name={`self-assessment-${item.index}`}
+                        value={n}
+                        checked={selfAssessment[String(item.index)] === n}
+                        onChange={() => onRateSelfAssessment(item.index, n)}
+                        disabled={pending}
+                      />
+                      {n}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : null}
 
         {step?.type === "closing" ? (

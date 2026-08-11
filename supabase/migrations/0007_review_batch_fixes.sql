@@ -1,3 +1,8 @@
+-- Review-batch content fixes (Detachment prose + Recognition Activity 2 explanation).
+-- Safe to re-run. Does not wipe progress.
+
+update disciplines
+set content_md = $md$
 ## Introduction
 
 **Releasing attachment without abandoning responsibility**
@@ -81,10 +86,6 @@ I may:
 - refuse responsibility
 - avoid difficult intervention
 - claim neutrality when action is required
-
-### Balanced Expression
-
-I can care deeply about the quality of the outcome without needing the outcome to validate me.
 
 ## How Detachment Shows Up
 
@@ -225,3 +226,13 @@ Ask:
 ## Closing Statement
 
 Detachment allows us to use powerful outputs without becoming controlled by them.
+$md$
+where id = 'b2000000-0000-4000-8000-000000000001';
+
+update scenarios
+set explanation = $e$Detachment asks what combination of effectiveness, participation, learning and implementation matters — not which plan looks most innovative, scores highest on a model metric, or can be forced through persuasion.$e$
+where id = 'c3000000-0000-4000-8000-000000000003';
+
+update scenarios
+set explanation = $e$D demonstrates balanced Detachment: remaining engaged to help the group test the decision without insisting on a preferred option. B is also balanced Detachment.$e$
+where id = 'c3000000-0000-4000-8000-000000000002';

@@ -493,3 +493,4 @@ Ask:
 -   What will you practise next?
 
 # Closing Statement 
+-   Detachment allows us to use powerful outputs without becoming controlled by them.

@@ -197,6 +197,43 @@ export async function ensureLessonStarted(
   return { ok: true };
 }
 
+export async function saveSelfAssessmentRating(
+  disciplineId: string,
+  itemIndex: number,
+  rating: number,
+): Promise<ActionResult> {
+  const session = await requireSession();
+  if (!session) return { ok: false, error: "unauthorized" };
+  if (!Number.isInteger(itemIndex) || itemIndex < 1) {
+    return { ok: false, error: "invalid item" };
+  }
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { ok: false, error: "rating must be 1–5" };
+  }
+
+  const current = await loadProgressPayload(session.userId, disciplineId);
+  const next = {
+    contentViewed: current.answers.contentViewed,
+    answers: current.answers.answers ?? {},
+    selfAssessment: {
+      ...(current.answers.selfAssessment ?? {}),
+      [String(itemIndex)]: rating,
+    },
+  };
+
+  const error = await saveProgressAnswers(
+    session.userId,
+    disciplineId,
+    next,
+    { started_at: current.started_at },
+  );
+  if (error) return { ok: false, error: error.message };
+
+  const ctx = await getDisciplineContext(disciplineId);
+  if (ctx) revalidateDiscipline(ctx);
+  return { ok: true };
+}
+
 export async function markContentViewed(
   disciplineId: string,
 ): Promise<ActionResult> {
@@ -208,6 +245,7 @@ export async function markContentViewed(
     ...current.answers,
     contentViewed: true,
     answers: current.answers.answers ?? {},
+    selfAssessment: current.answers.selfAssessment ?? {},
   };
 
   const error = await saveProgressAnswers(
@@ -268,6 +306,7 @@ export async function submitScenarioAnswer(
   const next = {
     contentViewed: current.answers.contentViewed,
     answers: answersMap,
+    selfAssessment: current.answers.selfAssessment ?? {},
   };
 
   const error = await saveProgressAnswers(

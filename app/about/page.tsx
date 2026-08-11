@@ -16,12 +16,12 @@ export default function AboutPage() {
         source framework elements and programme adaptations, appears at the end
         of{" "}
         <strong>Welcome and Introduction</strong> (
-        <code>/paths/welcome</code>) after you launch through Ludwitt/Hult.
+        <code>/paths/welcome</code>) after you begin the programme.
       </p>
       <p style={{ marginTop: "1.5rem" }}>
         <Link href="/explore">Explore the Paths</Link>
         {" · "}
-        <Link href="/launch">Launch from Ludwitt/Hult</Link>
+        <Link href="/get-started">Get Started</Link>
       </p>
     </main>
   );
