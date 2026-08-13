@@ -96,7 +96,7 @@ export function CourseSidebar({ paths }: Props) {
 
         <Link
           href="/paths/assessment"
-          className={`tef-nav-link${pathname === "/paths/assessment" ? " active" : ""}`}
+          className={`tef-nav-link${pathname.startsWith("/paths/assessment") ? " active" : ""}`}
         >
           TEF Developmental Profile
         </Link>

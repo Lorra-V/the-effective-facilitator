@@ -172,7 +172,7 @@ export function WelcomeClient() {
           </button>
         ) : (
           <Link href="/paths/assessment" className="tef-btn" style={{ textDecoration: "none" }}>
-            TEF Developmental Assessment
+            TEF Developmental Profile
           </Link>
         )}
       </div>
