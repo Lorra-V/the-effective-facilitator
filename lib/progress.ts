@@ -6,6 +6,8 @@ export type ProgressAnswers = {
   answers?: Record<string, string>;
   /** self-assessment item index (1-based) → rating 1–5 */
   selfAssessment?: Record<string, number>;
+  /** classification scenario_id → statement key → chosen label */
+  classifications?: Record<string, Record<string, string>>;
 };
 
 export function parseProgressAnswers(raw: string | null | undefined): ProgressAnswers {
@@ -21,6 +23,21 @@ export function parseProgressAnswers(raw: string | null | undefined): ProgressAn
           }
         }
       }
+      const classifications: Record<string, Record<string, string>> = {};
+      if (parsed.classifications && typeof parsed.classifications === "object") {
+        for (const [scenarioId, labels] of Object.entries(parsed.classifications)) {
+          if (!labels || typeof labels !== "object") continue;
+          const byStatement: Record<string, string> = {};
+          for (const [statementKey, label] of Object.entries(labels)) {
+            if (typeof label === "string" && label) {
+              byStatement[statementKey] = label;
+            }
+          }
+          if (Object.keys(byStatement).length > 0) {
+            classifications[scenarioId] = byStatement;
+          }
+        }
+      }
       return {
         contentViewed: Boolean(parsed.contentViewed),
         answers:
@@ -28,6 +45,7 @@ export function parseProgressAnswers(raw: string | null | undefined): ProgressAn
             ? parsed.answers
             : {},
         selfAssessment,
+        classifications,
       };
     }
   } catch {
@@ -41,5 +59,6 @@ export function serializeProgressAnswers(data: ProgressAnswers): string {
     contentViewed: Boolean(data.contentViewed),
     answers: data.answers ?? {},
     selfAssessment: data.selfAssessment ?? {},
+    classifications: data.classifications ?? {},
   });
 }

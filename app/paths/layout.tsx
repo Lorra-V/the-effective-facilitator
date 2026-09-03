@@ -84,9 +84,13 @@ export default async function PathsLayout({
           const progress = progressByDiscipline.get(d.id);
           const parsed = parseProgressAnswers(progress?.scenario_response);
           const answers = parsed.answers ?? {};
+          const classifiedBy = parsed.classifications ?? {};
           const scenarios = scenariosByDiscipline.get(d.id) ?? [];
           const dilemmas = scenarios.filter((s) => s.kind === "dilemma");
           const recognitions = scenarios.filter((s) => s.kind === "recognition");
+          const classifications = scenarios.filter(
+            (s) => s.kind === "classification",
+          );
           const knowledgeChecks = scenarios.filter(
             (s) => s.kind === "knowledge_check",
           );
@@ -97,9 +101,13 @@ export default async function PathsLayout({
             dilemmaDone:
               dilemmas.length > 0 &&
               dilemmas.every((s) => Boolean(answers[s.id])),
+            // Counts either recognition shape: choose-one or classification.
             recognitionDone:
-              recognitions.length > 0 &&
-              recognitions.every((s) => Boolean(answers[s.id])),
+              recognitions.length + classifications.length > 0 &&
+              recognitions.every((s) => Boolean(answers[s.id])) &&
+              classifications.every(
+                (s) => Object.keys(classifiedBy[s.id] ?? {}).length > 0,
+              ),
             knowledgeDone:
               knowledgeChecks.length > 0 &&
               (progress?.knowledge_score != null ||

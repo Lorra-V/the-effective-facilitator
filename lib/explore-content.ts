@@ -1,6 +1,8 @@
 /**
  * Public explore copy — titles + path descriptions only.
- * Source: docs/curriculum/TEF_developmental_paths.md (verbatim).
+ * Source: docs/curriculum/TEF_developmental_paths.md (verbatim, except the
+ * discipline rename Interior Dialogue → Interior Council; "interior dialogue"
+ * remains the in-module process term).
  * No content_md, scenarios, or completion state.
  */
 
@@ -35,12 +37,12 @@ export const EXPLORE_PATHS: ExplorePath[] = [
     theme: "Agency, Imagination and Intention",
     imageSrc: "/images/regarding_myself_strip.png",
     description: [
-      "The Regarding Myself path concerns our ability to remain the authors of our own thinking and choices. Interior Dialogue helps us recognise and examine the different voices, assumptions, emotions and motives influencing us. Intentionality enables us to clarify what we are trying to accomplish, why it matters and what responsibility must remain ours. Sense of Wonder preserves our openness to inspiration, possibility and ideas that have not yet been formed.",
+      "The Regarding Myself path concerns our ability to remain the authors of our own thinking and choices. Interior Council helps us recognise and examine the different voices, assumptions, emotions and motives influencing us. Intentionality enables us to clarify what we are trying to accomplish, why it matters and what responsibility must remain ours. Sense of Wonder preserves our openness to inspiration, possibility and ideas that have not yet been formed.",
       "In an era when AI can generate answers before we have fully explored the question, this path protects independent judgment and creative agency. It helps us use AI to extend our thinking without allowing its fluency, speed or apparent certainty to replace the inner work of discernment and imagination. It asks:",
     ],
     question:
       "How do I remain the author of my choices when systems can think and generate for me?",
-    disciplines: ["Interior Dialogue", "Sense of Wonder", "Intentionality"],
+    disciplines: ["Interior Council", "Sense of Wonder", "Intentionality"],
   },
   {
     slug: "regarding-life",

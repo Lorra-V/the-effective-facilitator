@@ -47,7 +47,7 @@ export default async function PathsPage() {
     <div className="tef-main-inner">
       <h1 style={{ marginBottom: "0.5rem" }}>Learning Paths</h1>
       <p style={{ color: "var(--tef-muted)", marginBottom: "1.5rem" }}>
-        Three full modules and six previews. Full modules include dilemma,
+        Four full modules and five previews. Full modules include dilemma,
         recognition, and knowledge checks.
       </p>
       <p style={{ marginBottom: "2.5rem" }}>

@@ -7,6 +7,7 @@ import {
   parseProgressAnswers,
   serializeProgressAnswers,
 } from "@/lib/progress";
+import { parseClassificationLabels } from "@/lib/scenario-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ActionResult = {
@@ -24,7 +25,12 @@ type DisciplineRow = {
   paths: { slug: string } | { slug: string }[] | null;
 };
 
-type ScenarioOption = { key: string; text: string; score?: number };
+type ScenarioOption = {
+  key: string;
+  text: string;
+  score?: number;
+  classification?: string;
+};
 
 function pathSlugFrom(row: DisciplineRow): string | null {
   if (!row.paths) return null;
@@ -219,6 +225,7 @@ export async function saveSelfAssessmentRating(
       ...(current.answers.selfAssessment ?? {}),
       [String(itemIndex)]: rating,
     },
+    classifications: current.answers.classifications ?? {},
   };
 
   const error = await saveProgressAnswers(
@@ -246,6 +253,7 @@ export async function markContentViewed(
     contentViewed: true,
     answers: current.answers.answers ?? {},
     selfAssessment: current.answers.selfAssessment ?? {},
+    classifications: current.answers.classifications ?? {},
   };
 
   const error = await saveProgressAnswers(
@@ -307,6 +315,7 @@ export async function submitScenarioAnswer(
     contentViewed: current.answers.contentViewed,
     answers: answersMap,
     selfAssessment: current.answers.selfAssessment ?? {},
+    classifications: current.answers.classifications ?? {},
   };
 
   const error = await saveProgressAnswers(
@@ -337,6 +346,87 @@ export async function submitScenarioAnswer(
     knowledgeScore,
     selectedKey,
   };
+}
+
+/**
+ * Save a `classification` recognition activity: every statement gets its own
+ * label, and more than one statement may share a label, so there is no single
+ * correct key. Stored under progress.classifications, not `answers`.
+ * Like the choose-one recognition step, this is not a completion gate.
+ */
+export async function submitClassification(
+  disciplineId: string,
+  sessionId: string,
+  scenarioId: string,
+  labels: Record<string, string>,
+): Promise<ActionResult> {
+  const session = await requireSession();
+  if (!session) return { ok: false, error: "unauthorized" };
+
+  const supabase = createAdminClient();
+  const { data: scenario, error: scenarioError } = await supabase
+    .from("scenarios")
+    .select("id, discipline_id, kind, options, rubric_md")
+    .eq("id", scenarioId)
+    .eq("discipline_id", disciplineId)
+    .maybeSingle();
+
+  if (scenarioError || !scenario) {
+    return { ok: false, error: "scenario not found" };
+  }
+  if (scenario.kind !== "classification") {
+    return { ok: false, error: "not a classification activity" };
+  }
+
+  const options = (scenario.options ?? []) as ScenarioOption[];
+  const allowed = parseClassificationLabels(scenario.rubric_md);
+
+  for (const key of Object.keys(labels)) {
+    if (!options.some((o) => o.key === key)) {
+      return { ok: false, error: "invalid statement" };
+    }
+  }
+  for (const option of options) {
+    const chosen = labels[option.key];
+    if (!chosen || !allowed.includes(chosen)) {
+      return { ok: false, error: "Classify every statement first." };
+    }
+  }
+
+  const current = await loadProgressPayload(session.userId, disciplineId);
+  const next = {
+    contentViewed: current.answers.contentViewed,
+    answers: current.answers.answers ?? {},
+    selfAssessment: current.answers.selfAssessment ?? {},
+    classifications: {
+      ...(current.answers.classifications ?? {}),
+      [scenarioId]: labels,
+    },
+  };
+
+  const error = await saveProgressAnswers(
+    session.userId,
+    disciplineId,
+    next,
+    { started_at: current.started_at },
+  );
+  if (error) return { ok: false, error: error.message };
+
+  await sendLudwittEvent(session.ludwittSub, "quiz_submitted", {
+    session_id: sessionId,
+    appUserId: session.userId,
+    discipline_id: disciplineId,
+    scenario_id: scenarioId,
+    kind: scenario.kind,
+    selected_key: options
+      .map((o) => `${o.key}:${labels[o.key]}`)
+      .join("|"),
+  });
+
+  const ctx = await getDisciplineContext(disciplineId);
+  if (ctx) revalidateDiscipline(ctx);
+
+  return { ok: true };
 }
 
 export async function markLessonComplete(

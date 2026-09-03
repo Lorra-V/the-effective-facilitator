@@ -23,6 +23,13 @@ export type LessonStep =
     }
   | { type: "scenario"; id: string; title: string; scenario: ScenarioView }
   | {
+      /** Classify N independent statements; more than one may share a label. */
+      type: "classification";
+      id: string;
+      title: string;
+      scenario: ScenarioView;
+    }
+  | {
       type: "knowledge_check";
       id: string;
       title: string;
@@ -196,6 +203,7 @@ function coalesceOpeningContentSteps(steps: LessonStep[]): LessonStep[] {
   const out = [...steps];
   const firstInteractive = out.findIndex((s) =>
     s.type === "scenario" ||
+    s.type === "classification" ||
     s.type === "knowledge_check" ||
     s.type === "self_assessment",
   );
@@ -281,6 +289,9 @@ export function buildLessonSteps(
   const recognitions = scenarios
     .filter((s) => s.kind === "recognition")
     .sort((a, b) => a.id.localeCompare(b.id));
+  const classifications = scenarios
+    .filter((s) => s.kind === "classification")
+    .sort((a, b) => a.id.localeCompare(b.id));
   const knowledgeChecks = scenarios
     .filter((s) => s.kind === "knowledge_check")
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -290,6 +301,7 @@ export function buildLessonSteps(
 
   let dilemmaIdx = 0;
   let recognitionIdx = 0;
+  let classificationIdx = 0;
   const steps: LessonStep[] = [];
   let usedKnowledge = false;
   let usedClosing = false;
@@ -309,6 +321,19 @@ export function buildLessonSteps(
     }
 
     if (isRecognitionTitle(section.title)) {
+      // Classification recognition takes precedence; modules without a
+      // classification row keep the existing choose-one recognition step.
+      const classification = classifications[classificationIdx];
+      if (classification) {
+        classificationIdx += 1;
+        steps.push({
+          type: "classification",
+          id: `classification-${classification.id}`,
+          title: section.title,
+          scenario: classification,
+        });
+        continue;
+      }
       const scenario = recognitions[recognitionIdx++];
       if (scenario) {
         steps.push({
@@ -390,6 +415,15 @@ export function buildLessonSteps(
     steps.push({
       type: "scenario",
       id: `recognition-${scenario.id}`,
+      title: "Recognition Activity",
+      scenario,
+    });
+  }
+  while (classificationIdx < classifications.length) {
+    const scenario = classifications[classificationIdx++];
+    steps.push({
+      type: "classification",
+      id: `classification-${scenario.id}`,
       title: "Recognition Activity",
       scenario,
     });

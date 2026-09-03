@@ -6,13 +6,18 @@ import {
   markContentViewed,
   markLessonComplete,
   saveSelfAssessmentRating,
+  submitClassification,
   submitScenarioAnswer,
 } from "@/app/paths/actions";
 import { SessionHeartbeat } from "@/app/paths/SessionHeartbeat";
 import { CalloutBox } from "@/components/CalloutBox";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { buildLessonSteps, type LessonStep } from "@/lib/lesson-steps";
-import type { ScenarioOption, ScenarioView } from "@/lib/scenario-types";
+import {
+  parseClassificationLabels,
+  type ScenarioOption,
+  type ScenarioView,
+} from "@/lib/scenario-types";
 
 export type { ScenarioOption, ScenarioView };
 
@@ -24,6 +29,7 @@ type Props = {
   scenarios: ScenarioView[];
   initialAnswers: Record<string, string>;
   initialSelfAssessment: Record<string, number>;
+  initialClassifications: Record<string, Record<string, string>>;
   initialContentViewed: boolean;
   initialKnowledgeScore: number | null;
   initialCompletedAt: string | null;
@@ -41,11 +47,13 @@ function FeedbackBlock({
   selectedKey,
   correctKey,
   explanation,
+  options = [],
 }: {
   kind: string;
   selectedKey: string;
   correctKey: string | null;
   explanation: string;
+  options?: ScenarioOption[];
 }) {
   // Recognition + Knowledge Check have genuine correct answers.
   // Dilemma (and preview) stay judgment-scored — never "Correct answer".
@@ -72,7 +80,11 @@ function FeedbackBlock({
     );
   }
 
-  // Dilemma / preview — judgment feedback, not right/wrong
+  // Dilemma / preview — judgment feedback, not right/wrong.
+  // Per-option feedback when authored; otherwise the shared explanation.
+  const perOption = options.find((o) => o.key === selectedKey)?.feedback;
+  const paragraph = perOption || explanation;
+
   return (
     <div
       className="tef-feedback tef-feedback-judgment"
@@ -87,8 +99,8 @@ function FeedbackBlock({
       <p style={{ margin: "0.35rem 0 0", color: "var(--tef-muted)" }}>
         Your response: {selectedKey}
       </p>
-      {explanation ? (
-        <p style={{ margin: "0.5rem 0 0" }}>{explanation}</p>
+      {paragraph ? (
+        <p style={{ margin: "0.5rem 0 0" }}>{paragraph}</p>
       ) : (
         <p style={{ margin: "0.5rem 0 0", color: "var(--tef-muted)", fontStyle: "italic" }}>
           There is no single right answer — consider how this choice reflects the
@@ -153,8 +165,114 @@ function ScenarioStepBody({
           selectedKey={saved}
           correctKey={scenario.correct_key}
           explanation={scenario.explanation}
+          options={options}
         />
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * Classification recognition: each statement is labelled independently and
+ * more than one statement may share a label, so there is no single correct
+ * key. Kept separate from ScenarioStepBody, which is choose-one only.
+ */
+function ClassificationStepBody({
+  scenario,
+  saved,
+  selections,
+  pending,
+  onSelect,
+  onSubmit,
+}: {
+  scenario: ScenarioView;
+  saved: Record<string, string> | undefined;
+  selections: Record<string, string>;
+  pending: boolean;
+  onSelect: (statementKey: string, label: string) => void;
+  onSubmit: () => void;
+}) {
+  const statements = Array.isArray(scenario.options) ? scenario.options : [];
+  const labels = parseClassificationLabels(scenario.rubric_md);
+  const allLabelled = statements.every((s) => Boolean(selections[s.key]));
+
+  return (
+    <div>
+      <MarkdownContent markdown={scenario.prompt_md} />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit();
+        }}
+        style={{ marginTop: "1rem" }}
+      >
+        {statements.map((statement) => {
+          const chosen = saved?.[statement.key];
+          const correct = statement.classification;
+          return (
+            <div key={statement.key} className="tef-rating-row">
+              <p className="tef-rating-prompt">
+                {statement.key}. {statement.text}
+              </p>
+              <div
+                className="tef-rating-scale"
+                role="radiogroup"
+                aria-label={`Statement ${statement.key}`}
+              >
+                {labels.map((label) => (
+                  <label key={label}>
+                    <input
+                      type="radio"
+                      name={`classification-${scenario.id}-${statement.key}`}
+                      value={label}
+                      checked={selections[statement.key] === label}
+                      onChange={() => onSelect(statement.key, label)}
+                      disabled={pending}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              {chosen ? (
+                <div
+                  className="tef-feedback tef-feedback-kc"
+                  style={{
+                    marginTop: "0.75rem",
+                    padding: "0.85rem 1rem",
+                    background: "rgba(3, 94, 123, 0.08)",
+                    borderLeft: "3px solid var(--tef-accent)",
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: 600 }}>
+                    {correct
+                      ? `Correct classification: ${correct}`
+                      : "Classification recorded"}
+                  </p>
+                  <p
+                    style={{
+                      margin: "0.35rem 0 0",
+                      color: "var(--tef-muted)",
+                    }}
+                  >
+                    You classified this as {chosen}.
+                  </p>
+                  {statement.feedback ? (
+                    <p style={{ margin: "0.5rem 0 0" }}>{statement.feedback}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+        <button
+          type="submit"
+          className="tef-btn"
+          disabled={pending || !allLabelled}
+          style={{ marginTop: "0.75rem" }}
+        >
+          {saved ? "Update Classifications" : "Submit Classifications"}
+        </button>
+      </form>
     </div>
   );
 }
@@ -167,6 +285,7 @@ export function DisciplineClient({
   scenarios,
   initialAnswers,
   initialSelfAssessment,
+  initialClassifications,
   initialContentViewed,
   initialKnowledgeScore,
   initialCompletedAt,
@@ -174,6 +293,10 @@ export function DisciplineClient({
   const [sessionId] = useState(newSessionId);
   const [answers, setAnswers] = useState(initialAnswers);
   const [selfAssessment, setSelfAssessment] = useState(initialSelfAssessment);
+  const [classifications, setClassifications] = useState(initialClassifications);
+  const [classSelections, setClassSelections] = useState<
+    Record<string, Record<string, string>>
+  >(initialClassifications);
   const [contentViewed, setContentViewed] = useState(initialContentViewed);
   const [knowledgeScore, setKnowledgeScore] = useState(initialKnowledgeScore);
   const [completedAt, setCompletedAt] = useState(initialCompletedAt);
@@ -264,6 +387,29 @@ export function DisciplineClient({
     });
   }
 
+  function onSubmitClassification(scenario: ScenarioView) {
+    const labels = classSelections[scenario.id] ?? {};
+    const statements = Array.isArray(scenario.options) ? scenario.options : [];
+    if (!statements.every((s) => Boolean(labels[s.key]))) {
+      setMessage("Classify every statement first.");
+      return;
+    }
+    setMessage(null);
+    startTransition(async () => {
+      const result = await submitClassification(
+        disciplineId,
+        sessionId,
+        scenario.id,
+        labels,
+      );
+      if (!result.ok) {
+        setMessage(result.error ?? "Submit failed");
+        return;
+      }
+      setClassifications((prev) => ({ ...prev, [scenario.id]: labels }));
+    });
+  }
+
   function onRateSelfAssessment(itemIndex: number, rating: number) {
     setSelfAssessment((prev) => ({ ...prev, [String(itemIndex)]: rating }));
     startTransition(async () => {
@@ -295,6 +441,14 @@ export function DisciplineClient({
     if (!s) return false;
     if (s.type === "scenario") {
       return Boolean(answers[s.scenario.id]);
+    }
+    if (s.type === "classification") {
+      const saved = classifications[s.scenario.id];
+      if (!saved) return false;
+      const statements = Array.isArray(s.scenario.options)
+        ? s.scenario.options
+        : [];
+      return statements.every((st) => Boolean(saved[st.key]));
     }
     if (s.type === "knowledge_check") {
       return s.scenarios.every((sc) => Boolean(answers[sc.id]));
@@ -436,6 +590,25 @@ export function DisciplineClient({
               }))
             }
             onSubmit={() => onSubmitScenario(step.scenario.id)}
+          />
+        ) : null}
+
+        {step?.type === "classification" ? (
+          <ClassificationStepBody
+            scenario={step.scenario}
+            saved={classifications[step.scenario.id]}
+            selections={classSelections[step.scenario.id] ?? {}}
+            pending={pending}
+            onSelect={(statementKey, label) =>
+              setClassSelections((prev) => ({
+                ...prev,
+                [step.scenario.id]: {
+                  ...(prev[step.scenario.id] ?? {}),
+                  [statementKey]: label,
+                },
+              }))
+            }
+            onSubmit={() => onSubmitClassification(step.scenario)}
           />
         ) : null}
 

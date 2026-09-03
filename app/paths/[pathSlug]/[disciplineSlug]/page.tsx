@@ -49,7 +49,7 @@ export default async function DisciplinePage({ params }: PageProps) {
 
   const { data: scenarios } = await supabase
     .from("scenarios")
-    .select("id, kind, prompt_md, options, correct_key, explanation")
+    .select("id, kind, prompt_md, options, correct_key, explanation, rubric_md")
     .eq("discipline_id", discipline.id);
 
   const { data: progress } = await supabase
@@ -68,6 +68,7 @@ export default async function DisciplinePage({ params }: PageProps) {
     options: normalizeOptions(s.options),
     correct_key: s.correct_key,
     explanation: s.explanation ?? "",
+    rubric_md: s.rubric_md ?? "",
   }));
 
   const pathLabel = path.title.includes("—")
@@ -93,6 +94,7 @@ export default async function DisciplinePage({ params }: PageProps) {
           scenarios={scenarioViews}
           initialAnswers={parsed.answers ?? {}}
           initialSelfAssessment={parsed.selfAssessment ?? {}}
+          initialClassifications={parsed.classifications ?? {}}
           initialContentViewed={Boolean(parsed.contentViewed)}
           initialKnowledgeScore={progress?.knowledge_score ?? null}
           initialCompletedAt={progress?.completed_at ?? null}
