@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyLaunchToken } from "@/lib/ludwitt/verifyLaunch";
 import {
+  PENDING_NAME_COOKIE,
   SESSION_COOKIE_NAME,
   createSessionToken,
   sessionCookieOptions,
@@ -29,6 +30,10 @@ export async function GET(request: NextRequest) {
   }
 
   const { sub, email } = verified.claims;
+  const name = (request.cookies.get(PENDING_NAME_COOKIE)?.value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
 
   let userId: string;
   try {
@@ -36,7 +41,9 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("app_users")
       .upsert(
-        { ludwitt_sub: sub, email },
+        name
+          ? { ludwitt_sub: sub, email, name }
+          : { ludwitt_sub: sub, email },
         { onConflict: "ludwitt_sub" },
       )
       .select("id")
@@ -64,5 +71,8 @@ export async function GET(request: NextRequest) {
     sessionToken,
     sessionCookieOptions(),
   );
+  if (name) {
+    response.cookies.set(PENDING_NAME_COOKIE, "", sessionCookieOptions(0));
+  }
   return response;
 }

@@ -3,7 +3,7 @@
  */
 import { chromium } from "playwright";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://tef-deploy.vercel.app";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://theeffectivefacilitator.com";
 
 async function submitAndReport(page, label, { name, email, checkHoneypot = false, fakeCompanyAutofill = false }) {
   console.log(`\n=== ${label} ===`);

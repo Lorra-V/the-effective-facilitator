@@ -1,4 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  PENDING_NAME_COOKIE,
+  sessionCookieOptions,
+} from "@/lib/session";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -26,8 +30,12 @@ export async function POST(request: NextRequest) {
 
   const emailRaw = String(form.get("email") ?? "").trim();
   const email = emailRaw.toLowerCase();
-  // Optional — accepted for product UX; launch-token API has no name field.
-  void String(form.get("name") ?? "").trim();
+  // Optional display name — launch-token API has no name field, so this is
+  // handed to /launch via a short-lived cookie and stored on app_users.
+  const name = String(form.get("name") ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
 
   if (!email || !EMAIL_RE.test(email)) {
     return errorRedirect(request);
@@ -79,5 +87,11 @@ export async function POST(request: NextRequest) {
 
   const launchUrl = new URL("/launch", request.url);
   launchUrl.searchParams.set("token", token);
-  return NextResponse.redirect(launchUrl, { status: 303 });
+  const response = NextResponse.redirect(launchUrl, { status: 303 });
+  if (name) {
+    response.cookies.set(PENDING_NAME_COOKIE, name, {
+      ...sessionCookieOptions(120),
+    });
+  }
+  return response;
 }

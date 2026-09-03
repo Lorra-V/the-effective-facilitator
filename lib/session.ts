@@ -2,6 +2,9 @@ import { SignJWT, jwtVerify } from "jose";
 
 export const SESSION_COOKIE_NAME = "ef_session";
 
+/** Short-lived cookie: optional display name from /get-started → /launch. */
+export const PENDING_NAME_COOKIE = "ef_pending_name";
+
 /** App-owned session lifetime (separate from Ludwitt launch JWT). */
 const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
 
